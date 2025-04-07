@@ -1,0 +1,2 @@
+## Checkpoints
+Para usar los checkpoints, hay un prefab que se puede colocar en escena. Cada prefab tiene un id, hay que poner a mano cual quieres (tienen que ir ordenados, si hay 3 checkpoints: 0, 1, 2). Ademas, el GameManager necesita saber cuantos checkpoints hay (poner en la variable Num Checkpoints). El checkpoint es un trigger, cuando han pasado los 2 jugadores se activa. El prefab tiene dos objetos hijos, que sirven para marcar la posición donde van a spawnear los jugadores, así que al ponerlos en escena lo suyo es mover esa posición a mano. 
