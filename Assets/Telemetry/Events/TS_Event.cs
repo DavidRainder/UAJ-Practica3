@@ -5,17 +5,17 @@ using TelemetrySystem;
 
 namespace TelemetrySystem
 {
-    public class Event
+    public abstract class Event
     {
-        public readonly EventType Type;
+        public abstract string GetType();
+        // public readonly EventType Type;
         protected long _timeStamp;
         public long TimeStamp { get { return _timeStamp; } }
 
         public static bool Active;
 
-        public Event(EventType type, DateTimeOffset time)
+        public Event(DateTimeOffset time)
         {
-            Type = type;
             _timeStamp = time.ToUnixTimeMilliseconds();
             
             // De momento lo dejamos a True, pero aquí habría que
@@ -25,7 +25,7 @@ namespace TelemetrySystem
 
         public string ToJSON()
         {
-            string message = "\"event_type\": \"" + Type.ToString() + '\"'
+            string message = "\"event_type\": \"" + GetType() + '\"'
                 + "\"time_stamp\": \"" + TimeStamp.ToString() + "\"";
 
             return message;
@@ -35,7 +35,16 @@ namespace TelemetrySystem
     public abstract class PersistentEvent : Event
     {
         // en ms
+        /// <summary>
+        /// Tiempo que pasa hasta que el evento ocurre.
+        /// </summary>
         public readonly int PersistentTime;
+
+        /// <summary>
+        /// El tiempo que lleva acumulado
+        /// Se ha sucedido 1 vez, será PersistentTime. 
+        /// Si se sucedido 2 veces, será 2*PersistenTime, etc.
+        /// </summary>
         public long _currentPersistentTime;
 
         public abstract void GetDataCallback();
@@ -56,7 +65,7 @@ namespace TelemetrySystem
             return _currentPersistentTime;
         }
 
-        public PersistentEvent(EventType type, int persistencyTime) : base(type, DateTimeOffset.UtcNow)
+        public PersistentEvent(int persistencyTime) : base(DateTimeOffset.UtcNow)
         {
             PersistentTime = persistencyTime;
             _currentPersistentTime = persistencyTime;
@@ -66,8 +75,14 @@ namespace TelemetrySystem
 
 public class MiauEvent : TelemetrySystem.PersistentEvent
 {
-    public MiauEvent(EventType type, int persistencyTime) : base(type, persistencyTime)
+
+    public MiauEvent(int persistencyTime) : base(persistencyTime)
     {
+    }
+
+    public override string GetType() 
+    {
+        return "MiauEvent";
     }
 
     public override void GetDataCallback()

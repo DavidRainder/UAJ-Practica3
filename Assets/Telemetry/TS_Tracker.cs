@@ -3,7 +3,6 @@ using UnityEngine;
 using Utils;
 using System.Threading.Tasks;
 using System.Threading;
-using System;
 
 namespace TelemetrySystem {
 
@@ -21,23 +20,30 @@ namespace TelemetrySystem {
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
 
-                _events = new Queue<Event>();
-                _persistentEvents = new PriorityQueue<PersistentEvent, long>();
-
-                mutEvents = new Mutex();
-                mutPersistentEvents = new Mutex();
-                mutDestroyed = new Mutex();
-
-                TrackPersistentEvent(new MiauEvent(EventType.APPLICATION_START, 500));
-                TrackPersistentEvent(new MiauEvent(EventType.SCENE_CHANGED, 200));
-                TrackPersistentEvent(new MiauEvent(EventType.APPLICATION_END, 300));
-
-                Parallel.Invoke(TestingPersistentEvents, PersistentEventTracking);
             }
             else
             {
                 Destroy(gameObject);
             }
+        }
+
+        private void Start()
+        {
+            _events = new Queue<Event>();
+            _persistentEvents = new PriorityQueue<PersistentEvent, long>();
+            _eventRegistry = GetComponent<EventRegistry>();
+
+            // error handling de ^^
+
+            mutEvents = new Mutex();
+            mutPersistentEvents = new Mutex();
+            mutDestroyed = new Mutex();
+
+            TrackPersistentEvent(new MiauEvent(500));
+            TrackPersistentEvent(new MiauEvent(200));
+            TrackPersistentEvent(new MiauEvent(300));
+
+            Parallel.Invoke(TestingPersistentEvents, PersistentEventTracking);
         }
 
         private void OnDestroy()
@@ -53,6 +59,8 @@ namespace TelemetrySystem {
         private Mutex mutDestroyed;
 
         static bool destroyed = false;
+
+        EventRegistry _eventRegistry = null;
 
         // ESTO DE MOMENTO ES UNA PRUEBA PARA LOS MUTEX UN SALUDO
         async void TestingPersistentEvents()
@@ -81,12 +89,16 @@ namespace TelemetrySystem {
             {
                 // mutex
                 mutPersistentEvents.WaitOne();
+
+                // pillas un evento
                 _persistentEvents.TryDequeue(out PersistentEvent e, out long priority);
-                mutPersistentEvents.ReleaseMutex();
+                
                 // unlock
+                mutPersistentEvents.ReleaseMutex();
 
 
                 Debug.Log("Waiting for: " + (priority - currentTimeStamp).ToString() + "ms.");
+                
                 await Task.Run(async () => { await Task.Delay((int)(priority - currentTimeStamp)); });
 
                 currentTimeStamp = priority;
@@ -95,15 +107,19 @@ namespace TelemetrySystem {
 
                 // mutex
                 mutEvents.WaitOne();
+
                 PushEvent(e);
-                mutEvents.ReleaseMutex();
+                
                 // unlock
+                mutEvents.ReleaseMutex();
 
                 // mutex
                 mutPersistentEvents.WaitOne();
+                
                 _persistentEvents.Enqueue(e, e.AdvanceTimer());
-                mutPersistentEvents.ReleaseMutex();
+                
                 // unlock
+                mutPersistentEvents.ReleaseMutex();
             }
         }
         
@@ -114,6 +130,7 @@ namespace TelemetrySystem {
 
         #region Private Variables
         Queue<Event> _events;
+        // el Long es el tiempo en POSIX en el que se debe ejecutar
         PriorityQueue<PersistentEvent, long> _persistentEvents;
         
         #endregion
@@ -121,22 +138,29 @@ namespace TelemetrySystem {
 
         public void PushEvent(Event e)
         {
-            // LOCK MUTEX
+            if (!_eventRegistry.eventsRegistry.Contains(e.GetType())) return;
 
+            // LOCK MUTEX
+            mutEvents.WaitOne();
             // Si está activo... 
                 // lo metemos en la cola
             
             _events.Enqueue(e);
 
             // Si no está activa...
-                // lo ignoramos
-            
+            // lo ignoramos
+
             // UNLOCK MUTEX
+            mutEvents.ReleaseMutex();
+
         }
 
         public void TrackPersistentEvent(PersistentEvent e)
         {
+            if (!_eventRegistry.eventsRegistry.Contains(e.GetType())) return;
+
             // LOCK MUTEX
+            mutPersistentEvents.WaitOne();
 
             // Si está activo... 
             // lo metemos en la cola
@@ -148,6 +172,7 @@ namespace TelemetrySystem {
             // lo ignoramos
 
             // UNLOCK MUTEX
+            mutPersistentEvents.ReleaseMutex();
         }
     }
 }
