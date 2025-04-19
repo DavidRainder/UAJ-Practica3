@@ -16,7 +16,11 @@ public class EventRegistry : MonoBehaviour
     [SerializeField]
     List<EventActivation> eventNames = new List<EventActivation>();
 
-    public readonly HashSet<string> eventsRegistry = new HashSet<string>();
+    private HashSet<string> eventsRegistry = new HashSet<string>();
+    public bool IsEventActive(string eventID)
+    {
+        return eventsRegistry.Contains(eventID);
+    }
 
     private void Awake()
     {
@@ -25,7 +29,7 @@ public class EventRegistry : MonoBehaviour
                 eventsRegistry.Add(eventName.name);    
         }
 
-        Debug.Log(eventsRegistry.Count);
+        Debug.Log($"Eventos activos registrados: " + eventsRegistry.Count);
     }
 
 }

@@ -39,10 +39,6 @@ namespace TelemetrySystem {
             mutPersistentEvents = new Mutex();
             mutDestroyed = new Mutex();
 
-            TrackPersistentEvent(new MiauEvent(500));
-            TrackPersistentEvent(new MiauEvent(200));
-            TrackPersistentEvent(new MiauEvent(300));
-
             Parallel.Invoke(TestingPersistentEvents, PersistentEventTracking);
         }
 
@@ -138,7 +134,7 @@ namespace TelemetrySystem {
 
         public void PushEvent(Event e)
         {
-            if (!_eventRegistry.eventsRegistry.Contains(e.GetType())) return;
+            if (!_eventRegistry.IsEventActive(e.GetID())) return;
 
             // LOCK MUTEX
             mutEvents.WaitOne();
@@ -157,7 +153,7 @@ namespace TelemetrySystem {
 
         public void TrackPersistentEvent(PersistentEvent e)
         {
-            if (!_eventRegistry.eventsRegistry.Contains(e.GetType())) return;
+            if (!_eventRegistry.IsEventActive(e.GetID())) return;
 
             // LOCK MUTEX
             mutPersistentEvents.WaitOne();

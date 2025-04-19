@@ -293,7 +293,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   eventNames:
-  - name: MiauEvent
+  - name: GameStartEvent
+    activation: 0
+  - name: GameEndEvent
+    activation: 0
+  - name: LevelStartEvent
+    activation: 0
+  - name: LevelEndEvent
+    activation: 0
+  - name: LevelPauseEvent
+    activation: 0
+  - name: LevelUnpauseEvent
+    activation: 0
+  - name: LevelRestartEvent
+    activation: 0
+  - name: PlayerDeathEvent
+    activation: 0
+  - name: InteractionEvent
+    activation: 0
+  - name: PlayerPositionEvent
     activation: 0
 --- !u!1 &1837128525
 GameObject:
