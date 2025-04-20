@@ -263,6 +263,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4614644611521329711, guid: 0ff0acfc9548bae49b1d68a67afc8134, type: 3}
+      propertyPath: _outputFormat
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4614644611521329711, guid: 0ff0acfc9548bae49b1d68a67afc8134, type: 3}
+      propertyPath: _timeToDumpQueue
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4614644611521329711, guid: 0ff0acfc9548bae49b1d68a67afc8134, type: 3}
+      propertyPath: _fileDestinationName
+      value: lagalto
+      objectReference: {fileID: 0}
     - target: {fileID: 8994916520810821331, guid: 0ff0acfc9548bae49b1d68a67afc8134, type: 3}
       propertyPath: m_Name
       value: Telemetry
@@ -293,26 +305,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   eventNames:
-  - name: GameStartEvent
-    activation: 0
-  - name: GameEndEvent
-    activation: 0
-  - name: LevelStartEvent
-    activation: 0
-  - name: LevelEndEvent
-    activation: 0
-  - name: LevelPauseEvent
-    activation: 0
-  - name: LevelUnpauseEvent
-    activation: 0
-  - name: LevelRestartEvent
-    activation: 0
-  - name: PlayerDeathEvent
-    activation: 0
-  - name: InteractionEvent
-    activation: 0
-  - name: PlayerPositionEvent
-    activation: 0
+  - name: GameStart
+    activation: 1
+  - name: GameEnd
+    activation: 1
+  - name: LevelStart
+    activation: 1
+  - name: LevelEnd
+    activation: 1
+  - name: LevelPause
+    activation: 1
+  - name: LevelUnpause
+    activation: 1
+  - name: LevelRestart
+    activation: 1
+  - name: PlayerDeath
+    activation: 1
+  - name: Interaction
+    activation: 1
+  - name: PlayerPosition
+    activation: 1
 --- !u!1 &1837128525
 GameObject:
   m_ObjectHideFlags: 0

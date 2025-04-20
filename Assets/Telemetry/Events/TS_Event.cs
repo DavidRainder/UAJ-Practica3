@@ -2,8 +2,10 @@
 using System;
 using System.Numerics;
 using System.Security.Authentication.ExtendedProtection;
+using System.Xml;
 using TelemetrySystem;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace TelemetrySystem
 {
@@ -21,6 +23,16 @@ namespace TelemetrySystem
         public virtual string ToJSON()
         {
             return $"\"event_type\": \"{GetID()}\", \"time_stamp\": \"{TimeStamp.ToString()}\"";
+        }
+
+        public virtual void ToXML(XmlDocument doc, XmlNode eventsNode, out XmlNode myEvent)
+        {
+            myEvent = doc.CreateElement(GetID());
+            eventsNode.AppendChild(myEvent);
+
+            XmlAttribute timeStamp = doc.CreateAttribute("timestamp");
+            timeStamp.Value = TimeStamp.ToString();
+            myEvent.Attributes.Append(timeStamp);
         }
     }
 
@@ -76,76 +88,62 @@ public class GameEndEvent : TelemetrySystem.Event
     public override string GetID() => "ApplicationEnd";
 }
 
-public class LevelStartEvent : TelemetrySystem.Event
+public abstract class LevelEvent : TelemetrySystem.Event
 {
-    public string levelName; 
-    public LevelStartEvent(string _levelName) : base(DateTimeOffset.UtcNow)
+    public string levelName;
+    public LevelEvent(string _levelName) : base(DateTimeOffset.UtcNow)
     {
         levelName = _levelName;
     }
-    public override string GetID() => "LevelStart";
     public override string ToJSON()
     {
         return base.ToJSON() +
             $", \"level_name\": \"{levelName}\"";
+    }
+
+    public override void ToXML(XmlDocument doc, XmlNode eventsNode, out XmlNode myEvent)
+    {
+        base.ToXML(doc, eventsNode, out myEvent);
+
+        XmlAttribute levelName = doc.CreateAttribute("level_name");
+        levelName.Value = this.levelName;
+        myEvent.Attributes.Append(levelName);
     }
 }
 
-public class LevelEndEvent : TelemetrySystem.Event
+public class LevelStartEvent : LevelEvent
 {
-    public string levelName;
-    public LevelEndEvent(string _levelName) : base(DateTimeOffset.UtcNow)
-    {
-        levelName = _levelName;
-    }
+    public LevelStartEvent(string _levelName) : base(_levelName) { }
+
+    public override string GetID() => "LevelStart";
+}
+
+public class LevelEndEvent : LevelEvent
+{
+    public LevelEndEvent(string _levelName) : base(_levelName) { }
+
     public override string GetID() => "LevelEnd";
-    public override string ToJSON()
-    {
-        return base.ToJSON() +
-            $", \"level_name\": \"{levelName}\"";
-    }
 }
-public class LevelPauseEvent : TelemetrySystem.Event
+
+public class LevelPauseEvent : LevelEvent
 {
-    public string levelName;
-    public LevelPauseEvent(string _levelName) : base(DateTimeOffset.UtcNow)
-    {
-        levelName = _levelName;
-    }
+    public LevelPauseEvent(string _levelName) : base(_levelName) { }
+
     public override string GetID() => "LevelPause";
-    public override string ToJSON()
-    {
-        return base.ToJSON() +
-            $", \"level_name\": \"{levelName}\"";
-    }
 }
-public class LevelUnpauseEvent : TelemetrySystem.Event
+
+public class LevelUnpauseEvent : LevelEvent
 {
-    public string levelName;
-    public LevelUnpauseEvent(string _levelName) : base(DateTimeOffset.UtcNow)
-    {
-        levelName = _levelName;
-    }
+    public LevelUnpauseEvent(string _levelName) : base(_levelName) { }
+
     public override string GetID() => "LevelUnpause";
-    public override string ToJSON()
-    {
-        return base.ToJSON() +
-            $", \"level_name\": \"{levelName}\"";
-    }
 }
-public class LevelRestartEvent : TelemetrySystem.Event
+
+public class LevelRestartEvent : LevelEvent
 {
-    public string levelName;
-    public LevelRestartEvent(string _levelName) : base(DateTimeOffset.UtcNow)
-    {
-        levelName = _levelName;
-    }
+    public LevelRestartEvent(string _levelName) : base(_levelName) { }
+
     public override string GetID() => "LevelRestart";
-    public override string ToJSON()
-    {
-        return base.ToJSON() +
-            $", \"level_name\": \"{levelName}\"";
-    }
 }
 #endregion
 
@@ -161,9 +159,19 @@ public class PlayerDeathEvent : TelemetrySystem.Event
     public override string ToJSON()
     {
         return base.ToJSON() +
-            $", \"death_position\": {{\"x\":{position.x},\"y\":{position.y}}}";
+            $", \"death_position\": {{\"x\":\"{position.x}\",\"y\":\"{position.y}\"}}";
+    }
+
+    public override void ToXML(XmlDocument doc, XmlNode eventsNode, out XmlNode myEvent)
+    {
+        base.ToXML(doc, eventsNode, out myEvent);
+
+        XmlAttribute playerPosition = doc.CreateAttribute("player_position");
+        playerPosition.Value = $"X: {position.x}, Y: {position.y}";
+        myEvent.Attributes.Append(playerPosition);
     }
 }
+
 public class InteractionEvent : TelemetrySystem.Event
 {
     public string objectName;
@@ -177,7 +185,20 @@ public class InteractionEvent : TelemetrySystem.Event
     public override string ToJSON()
     {
         return base.ToJSON() +
-            $", \"object\": \":{objectName}\", \"success\":{success}";
+            $", \"object\": \"{objectName}\", \"success\":\"{success}\"";
+    }
+
+    public override void ToXML(XmlDocument doc, XmlNode eventsNode, out XmlNode myEvent)
+    {
+        base.ToXML(doc, eventsNode, out myEvent);
+
+        XmlAttribute myObject = doc.CreateAttribute("object_name");
+        myObject.Value = objectName;
+        myEvent.Attributes.Append(myObject);
+
+        XmlAttribute mySuccess = doc.CreateAttribute("success");
+        mySuccess.Value = success.ToString();
+        myEvent.Attributes.Append(mySuccess);
     }
 }
 
@@ -198,7 +219,16 @@ public class PlayerPositionEvent : TelemetrySystem.PersistentEvent
     public override string ToJSON()
     {
         return base.ToJSON() +
-            $", \"position\": {{\"x\":{position.x},\"y\":{position.y}}}";
+            $", \"position\": {{\"x\":\"{position.x}\",\"y\":\"{position.y}\"}}";
+    }
+
+    public override void ToXML(XmlDocument doc, XmlNode eventsNode, out XmlNode myEvent)
+    {
+        base.ToXML(doc, eventsNode, out myEvent);
+
+        XmlAttribute playerPosition = doc.CreateAttribute("player_position");
+        playerPosition.Value = $"X: {position.x}, Y: {position.y}";
+        myEvent.Attributes.Append(playerPosition);
     }
 }
 #endregion
