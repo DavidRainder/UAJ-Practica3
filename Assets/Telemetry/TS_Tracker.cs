@@ -7,6 +7,7 @@ using System.Text;
 using System.IO;
 using System;
 using System.Xml;
+using System.Collections;
 
 namespace TelemetrySystem {
 
@@ -58,6 +59,8 @@ namespace TelemetrySystem {
         private void OnDestroy()
         {
             destroyed = true;
+            killDumpEvents = true;
+            killPersistentEvents = true;
         }
 
         #region Private Variables
@@ -65,6 +68,8 @@ namespace TelemetrySystem {
         private Mutex mutPersistentEvents;
 
         static bool destroyed = false;
+        static bool killDumpEvents = false;
+        static bool killPersistentEvents = false;
 
         EventRegistry _eventRegistry = null;
 
@@ -118,11 +123,25 @@ namespace TelemetrySystem {
         private void CloseAndEndXMLFile()
         {
             if (xmlDocument != null) {
-                xmlDocument.Save(finalFileName);
+                try
+                {
+                    xmlDocument.Save(finalFileName);
+                }
+                catch (XmlException e)
+                {
+                    Debug.LogError($"XmlDocument couldn't be saved: {e.Message} \n" +
+                    "Some events have been lost.\n" +
+                    "Changing to JSON format");
+
+                    StartCoroutine(ChangeFromXMLToJSON());
+                }
             }
             else
             {
-                // error handling
+                Debug.LogError("XmlDocument couldn't be saved.\n" +
+                   "Some events have been lost.\n" +
+                   "Changing to JSON format");
+                StartCoroutine(ChangeFromXMLToJSON());
             }
         }
 
@@ -130,12 +149,7 @@ namespace TelemetrySystem {
         {
             CheckPreviousFiles(".json");
 
-            FileStream fileFirst = File.Open(
-                    finalFileName,
-                    FileMode.Append);
-
-            fileFirst.Write(new UTF8Encoding(true).GetBytes("{\n\"events\": [\n"));
-            fileFirst.Close();
+            WriteToFile("{\n\"events\": [\n");
         }
 
         bool firstEvent = true;
@@ -145,41 +159,60 @@ namespace TelemetrySystem {
 
             if (firstEvent)
             {
-                content += "{\n";
+                content += "{";
                 firstEvent = false;
             }
-            else content += ",{\n";
+            else content += ",{";
 
             content += e.ToJSON();
-            content += "\n}\n";
+            content += "}\n";
 
             return content;
         }
 
         private void CloseAndEndJSONFile()
         {
-            FileStream fileLast = File.Open(
-                    finalFileName,
-                    FileMode.Append);
-
-            fileLast.Write(new UTF8Encoding(true).GetBytes("\n]\n}"));
-            fileLast.Close();
+            WriteToFile("\n]\n}");
         }
 
         private void WriteToFile(string content)
         {
             var encodedContent = new UTF8Encoding(true).GetBytes(content);
 
-            FileStream file = File.Open(
-                finalFileName,
-                FileMode.Append);
+            try
+            {
+                FileStream file = File.Open(
+                    finalFileName,
+                    FileMode.Append);
 
-            file.Write(encodedContent);
+                file.Write(encodedContent);
 
-            file.Close();
+                file.Close();
+            } 
+            catch (Exception e)
+            {
+                Debug.LogError("Couldn't write to file. Maybe disk is full. Pleas check. Shutting Tracking System down");
+                Destroy(gameObject);
+            }
         }
 
-        async void DumpEvents()
+        /// <summary>
+        /// Matamos el thread que está llevando el XML y 
+        /// creamos uno nuevo en formato JSON
+        /// tras un tiempo igual al tiempo entre
+        /// 'dumps' de la cola de eventos
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator ChangeFromXMLToJSON()
+        {
+            killDumpEvents = true;
+            yield return new WaitForSeconds(_timeToDumpQueue);
+            killDumpEvents = false;
+            _outputFormat = SerializationFormat.JSON;
+            Parallel.Invoke(DumpEvents);
+        }
+
+        private void OpenDumpingFile()
         {
             switch (_outputFormat)
             {
@@ -190,42 +223,36 @@ namespace TelemetrySystem {
                     OpenAndStartXMLFile();
                     break;
             }
+        }
 
-            while (!destroyed)
+        private void GetDumpingContent()
+        {
+            switch (_outputFormat)
             {
-                await Task.Delay((int)(_timeToDumpQueue * 1000));
-                
-                mutEvents.WaitOne();
+                case SerializationFormat.JSON:
 
-                switch (_outputFormat)
-                {
-                    case SerializationFormat.JSON:
+                    string content = "";
+                    while (_events.Count > 0)
+                    {
+                        Event e = _events.Dequeue();
+                        content += GetJSONContentFromEvent(e);
+                    }
 
-                        string content = "";
-                        while (_events.Count > 0)
-                        {
-                            Event e = _events.Dequeue();
-                            content += GetJSONContentFromEvent(e);
-                        }
+                    WriteToFile(content);
 
-                        WriteToFile(content);
+                    break;
+                case SerializationFormat.XML:
 
-                        break;
-                    case SerializationFormat.XML:
+                    while (_events.Count > 0)
+                    {
+                        GetXMLContentFromEvent(_events.Dequeue());
+                    }
 
-                        while (_events.Count > 0)
-                        {
-                            GetXMLContentFromEvent(_events.Dequeue());
-                        }
-
-                        break;
-                }
-
-                mutEvents.ReleaseMutex();
-
-                Debug.Log("Events dumped");
+                    break;
             }
+        }
 
+        private void CloseDumpingFile() {
             switch (_outputFormat)
             {
                 case SerializationFormat.JSON:
@@ -237,6 +264,26 @@ namespace TelemetrySystem {
             }
         }
 
+        async void DumpEvents()
+        {
+            OpenDumpingFile();
+
+            while (!destroyed && !killDumpEvents)
+            {
+                await Task.Delay((int)(_timeToDumpQueue * 1000));
+                
+                mutEvents.WaitOne();
+
+                GetDumpingContent();
+
+                mutEvents.ReleaseMutex();
+
+                Debug.Log("Events dumped");
+            }
+
+            CloseDumpingFile();
+        }
+
         async void PersistentEventTracking()
         {
             bool empty = !_persistentEvents.TryPeek(out PersistentEvent _, out long firstPrio);
@@ -245,7 +292,7 @@ namespace TelemetrySystem {
                 return;
             
             long currentTimeStamp = firstPrio;
-            while(!destroyed)
+            while(!destroyed && !killPersistentEvents)
             {
                 // mutex
                 mutPersistentEvents.WaitOne();
