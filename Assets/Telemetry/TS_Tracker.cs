@@ -9,8 +9,8 @@ using System;
 using System.Xml;
 using System.Collections;
 using TMPro;
-using Firebase;
-using Firebase.Database;
+//using Firebase;
+//using Firebase.Database;
 
 namespace TelemetrySystem {
 
@@ -41,12 +41,12 @@ namespace TelemetrySystem {
         [SerializeField] float _timeToDumpQueue;
         [SerializeField] string _fileDestinationName = "Telemetry";
         [SerializeField] SerializationFormat _outputFormat = SerializationFormat.JSON;
-        DatabaseReference dbRef;
+        // DatabaseReference dbRef;
         #endregion
 
         private void Start()
         {
-            dbRef = FirebaseDatabase.DefaultInstance.RootReference; //Referencia a la base de datos de Firebase
+            // dbRef = FirebaseDatabase.DefaultInstance.RootReference; //Referencia a la base de datos de Firebase
             _events = new Queue<Event>();
             _persistentEvents = new PriorityQueue<PersistentEvent, long>();
             _eventRegistry = GetComponent<EventRegistry>();
@@ -59,7 +59,15 @@ namespace TelemetrySystem {
             Parallel.Invoke(DumpEvents, PersistentEventTracking);
 
             PushEvent(new InteractionEvent("miau", true));
-            TrackPersistentEvent(new PlayerPositionEvent(this.transform, 100));
+            TrackPersistentEvent(new PlayerPositionEvent(this.transform, 2));
+
+            StartCoroutine(miau());
+        }
+
+        IEnumerator miau()
+        {
+            yield return new WaitForSeconds(1.5f);
+            StopTrackingPersistentEvent("PlayerPosition");
         }
 
         private void OnDestroy()
@@ -192,7 +200,7 @@ namespace TelemetrySystem {
                     FileMode.Append);
 
                 file.Write(encodedContent);
-                dbRef.Child("events").SetRawJsonValueAsync(content); //ESTO ES PARA ENVIAR LOS DATOS A LA BASE DE DATOS (REVISAR)
+                // dbRef.Child("events").SetRawJsonValueAsync(content); //ESTO ES PARA ENVIAR LOS DATOS A LA BASE DE DATOS (REVISAR)
                 file.Close();
             } 
             catch (Exception e)
@@ -307,10 +315,13 @@ namespace TelemetrySystem {
                 mutPersistentEvents.WaitOne();
 
                 // pillas un evento
-                _persistentEvents.TryPeek(out _currentPersistentEvent, out _currentPriority);
+                empty = !_persistentEvents.TryPeek(out _currentPersistentEvent, out _currentPriority);
                 
                 // unlock
                 mutPersistentEvents.ReleaseMutex();
+
+                if (empty) 
+                    return;
 
                 // Debug.Log("Waiting for: " + (priority - currentTimeStamp).ToString() + "ms.");
                 
