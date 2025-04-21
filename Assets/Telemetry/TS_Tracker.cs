@@ -41,12 +41,11 @@ namespace TelemetrySystem {
         [SerializeField] float _timeToDumpQueue;
         [SerializeField] string _fileDestinationName = "Telemetry";
         [SerializeField] SerializationFormat _outputFormat = SerializationFormat.JSON;
-        // DatabaseReference dbRef;
+        public string finalFileNameDB = "";
         #endregion
 
         private void Start()
         {
-            // dbRef = FirebaseDatabase.DefaultInstance.RootReference; //Referencia a la base de datos de Firebase
             _events = new Queue<Event>();
             _persistentEvents = new PriorityQueue<PersistentEvent, long>();
             _eventRegistry = GetComponent<EventRegistry>();
@@ -109,6 +108,8 @@ namespace TelemetrySystem {
             }
 
             finalFileName = Application.persistentDataPath + "/" + numSession + "_" + baseFileName;
+            finalFileNameDB = Application.streamingAssetsPath + "/" + numSession + "_" + baseFileName;
+
         }
 
         private void OpenAndStartXMLFile()
@@ -191,7 +192,6 @@ namespace TelemetrySystem {
                     FileMode.Append);
 
                 file.Write(encodedContent);
-                // dbRef.Child("events").SetRawJsonValueAsync(content); //ESTO ES PARA ENVIAR LOS DATOS A LA BASE DE DATOS (REVISAR)
                 file.Close();
             } 
             catch (Exception e)
