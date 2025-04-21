@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TelemetrySystem;
 
 public class WallGrabComponent : MonoBehaviour
 {
@@ -12,6 +13,9 @@ public class WallGrabComponent : MonoBehaviour
     bool grabInput;
     bool touchingGrass;
     bool hasLeft = false;
+
+    //Telemetry
+    bool checkMoss = false;
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
@@ -28,7 +32,14 @@ public class WallGrabComponent : MonoBehaviour
         {
             touchingGrass = false;
         }
+    }
 
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.GetComponent<MossComponent>() != null)
+        {
+            checkMoss = true;
+        }
     }
 
     // Start is called before the first frame update
@@ -40,6 +51,7 @@ public class WallGrabComponent : MonoBehaviour
     public void Grab(bool input)
     {
         grabInput = input;
+
     }
 
     public bool IsGrabbing()
@@ -69,11 +81,35 @@ public class WallGrabComponent : MonoBehaviour
         {
             animation.BoUnGrab();
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
-            if(hasLeft)
+            if (hasLeft)
             {
                 StartCoroutine(Impulse());
                 hasLeft = false;
             }
+        }
+
+        if (checkMoss)
+        {
+            if (Input.anyKeyDown)
+            {
+                bool isMovementKey =
+                    Input.GetKeyDown(KeyCode.UpArrow) ||
+                    Input.GetKeyDown(KeyCode.LeftArrow) ||
+                    Input.GetKeyDown(KeyCode.RightArrow) ||
+                    Input.GetKeyDown(KeyCode.W) ||
+                    Input.GetKeyDown(KeyCode.A) ||
+                    Input.GetKeyDown(KeyCode.D);
+
+                if (Input.GetKeyDown(KeyCode.RightShift))
+                {
+                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
+                }
+                else if (!isMovementKey)
+                {
+                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
+                }
+            }
+            
         }
     }
 }

@@ -206,6 +206,9 @@ public class GameManager : MonoBehaviour
 
     public void BackToMenu()
     {
+        //Telemetry
+        Tracker.Instance.PushEvent(new ChangeSceneEvent(SceneManager.GetActiveScene().name, MENU_NAME));
+
         SceneManager.LoadScene(MENU_NAME);
     }
 

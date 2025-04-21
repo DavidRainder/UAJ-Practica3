@@ -1,6 +1,7 @@
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
+using TelemetrySystem;
 using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider2D))]
@@ -12,15 +13,16 @@ public class ButtonEnviroment : MonoBehaviour
 
     Animator animator = null;
 
-    // Configuración del collider
     Vector2 offset = new Vector2(0.0f, 0.32f);
-    Vector2 size = new Vector2(2.2f, 2.9f);
 
     int numEntitiesColliding = 0;
 
     bool IsActive { get { return numEntitiesColliding > 0; } }
 
     DoorEnviroment linkedDoor = null;
+
+    //Telemetry
+    bool check = false;
 
     private void Awake()
     {
@@ -35,7 +37,6 @@ public class ButtonEnviroment : MonoBehaviour
         var collider = GetComponent<BoxCollider2D>();
         collider.enabled = true;
         collider.isTrigger = true;
-        collider.size = size;
         collider.offset = offset;
 
         animator = GetComponent<Animator>();
@@ -87,6 +88,45 @@ public class ButtonEnviroment : MonoBehaviour
         {
             numEntitiesColliding--;
             Deactivate();
+            check = false;
+        }
+    }
+
+    //Telemetry
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        MovementComponent player = collision.GetComponent<MovementComponent>();
+
+        if (player != null)
+        {
+            check = true;
+        }
+    }
+
+    //Telemetry
+    private void Update()
+    {
+        if (check)
+        {
+            if (Input.anyKeyDown)
+            {
+                bool isMovementKey =
+                    Input.GetKeyDown(KeyCode.UpArrow) ||
+                    Input.GetKeyDown(KeyCode.LeftArrow) ||
+                    Input.GetKeyDown(KeyCode.RightArrow) ||
+                    Input.GetKeyDown(KeyCode.W) ||
+                    Input.GetKeyDown(KeyCode.A) ||
+                    Input.GetKeyDown(KeyCode.D);
+
+                if (Input.GetKeyDown(KeyCode.Q))
+                {
+                    Tracker.Instance.PushEvent(new InteractionEvent("Button", true));
+                }
+                else if (!isMovementKey)
+                {
+                    Tracker.Instance.PushEvent(new InteractionEvent("Button", false));
+                }
+            }
         }
     }
 

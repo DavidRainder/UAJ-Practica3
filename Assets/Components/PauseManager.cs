@@ -31,9 +31,18 @@ public class PauseManager : MonoBehaviour
     {
         isPaused = pauseGame;
         if (pauseMenu == null) Debug.LogWarning("Pause Menu has not been set. (UI Manager)");
-        else pauseMenu.SetActive(pauseGame);
-        if (isPaused) GameManager.Instance.PauseGame();
-        else GameManager.Instance.ResumeGame();
+        else
+        {
+            pauseMenu.SetActive(pauseGame);
+        }
+        if (isPaused)
+        {
+            GameManager.Instance.PauseGame();
+        }
+        else
+        {
+            GameManager.Instance.ResumeGame();
+        }
     }
 
     public void BackToMenu()
