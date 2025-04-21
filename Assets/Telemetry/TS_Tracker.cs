@@ -285,6 +285,9 @@ namespace TelemetrySystem {
             CloseDumpingFile();
         }
 
+        PersistentEvent _currentPersistentEvent;
+        long _currentPriority;
+
         async void PersistentEventTracking()
         {
             bool empty = !_persistentEvents.TryPeek(out PersistentEvent _, out long firstPrio);
@@ -299,38 +302,45 @@ namespace TelemetrySystem {
                 mutPersistentEvents.WaitOne();
 
                 // pillas un evento
-                _persistentEvents.TryPeek(out PersistentEvent e, out long priority);
+                _persistentEvents.TryPeek(out _currentPersistentEvent, out _currentPriority);
                 
                 // unlock
                 mutPersistentEvents.ReleaseMutex();
 
                 // Debug.Log("Waiting for: " + (priority - currentTimeStamp).ToString() + "ms.");
                 
-                await Task.Run(async () => { await Task.Delay((int)(priority - currentTimeStamp)); });
+                await Task.Run(async () => { await Task.Delay((int)(_currentPriority - currentTimeStamp)); });
 
-                currentTimeStamp = priority;
+                // Este trozo de código comprueba si el evento, por alguna razón, ha sido destruído durante la espera.
+                // Solo va a ser destruído en caso de que llegue un "StopTrackingPersistentEvent".
+                if (_currentPersistentEvent != null)
+                {
+                    currentTimeStamp = _currentPriority;
 
-                e.UpdateTimeStamp();
+                    _currentPersistentEvent.UpdateTimeStamp();
 
-                e.GetDataCallback();
+                    _currentPersistentEvent.GetDataCallback();
 
-                // mutex
-                mutEvents.WaitOne();
+                    // mutex
+                    mutEvents.WaitOne();
 
-                PushEvent(e);
-                
-                // unlock
-                mutEvents.ReleaseMutex();
+                    PushEvent(_currentPersistentEvent);
 
-                // mutex
-                mutPersistentEvents.WaitOne();
+                    // unlock
+                    mutEvents.ReleaseMutex();
 
-                _persistentEvents.Dequeue();
-                
-                _persistentEvents.Enqueue(e, e.AdvanceTimer());
-                
-                // unlock
-                mutPersistentEvents.ReleaseMutex();
+                    // mutex
+                    mutPersistentEvents.WaitOne();
+
+                    _persistentEvents.Dequeue();
+
+                    _persistentEvents.Enqueue(_currentPersistentEvent, _currentPersistentEvent.AdvanceTimer());
+
+                    _currentPersistentEvent = null;
+
+                    // unlock
+                    mutPersistentEvents.ReleaseMutex();
+                }
             }
         }
 
@@ -340,7 +350,7 @@ namespace TelemetrySystem {
 
             int i = 0;
             int n = _persistentEvents.Count;
-
+             
             Queue<PersistentEvent> temporalQ = new Queue<PersistentEvent>();
             Queue<long> temporalPrioritiesQ = new Queue<long>();
 
@@ -359,6 +369,11 @@ namespace TelemetrySystem {
             while (temporalPrioritiesQ.Count > 0)
             {
                 _persistentEvents.Enqueue(temporalQ.Dequeue(), temporalPrioritiesQ.Dequeue());
+            }
+
+            if (_currentPersistentEvent != null && _currentPersistentEvent.GetID() == eventID)
+            {
+                _currentPersistentEvent = null;
             }
 
             mutPersistentEvents.ReleaseMutex();
