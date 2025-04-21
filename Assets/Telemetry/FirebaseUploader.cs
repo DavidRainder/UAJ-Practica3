@@ -1,3 +1,4 @@
+#if UNITY_ANDRODID
 using Firebase.Database;
 using UnityEngine;
 using System.IO;
@@ -57,3 +58,4 @@ namespace TelemetrySystem
     }
 
 }
+#endif
