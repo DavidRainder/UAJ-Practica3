@@ -8,6 +8,7 @@ using System.IO;
 using System;
 using System.Xml;
 using System.Collections;
+using TMPro;
 
 namespace TelemetrySystem {
 
@@ -298,7 +299,7 @@ namespace TelemetrySystem {
                 mutPersistentEvents.WaitOne();
 
                 // pillas un evento
-                _persistentEvents.TryDequeue(out PersistentEvent e, out long priority);
+                _persistentEvents.TryPeek(out PersistentEvent e, out long priority);
                 
                 // unlock
                 mutPersistentEvents.ReleaseMutex();
@@ -323,6 +324,8 @@ namespace TelemetrySystem {
 
                 // mutex
                 mutPersistentEvents.WaitOne();
+
+                _persistentEvents.Dequeue();
                 
                 _persistentEvents.Enqueue(e, e.AdvanceTimer());
                 
@@ -331,6 +334,35 @@ namespace TelemetrySystem {
             }
         }
 
+        public void StopTrackingPersistentEvent(string eventID)
+        {
+            mutPersistentEvents.WaitOne();
+
+            int i = 0;
+            int n = _persistentEvents.Count;
+
+            Queue<PersistentEvent> temporalQ = new Queue<PersistentEvent>();
+            Queue<long> temporalPrioritiesQ = new Queue<long>();
+
+            while(i < n && _persistentEvents.Count > 0)
+            {
+                _persistentEvents.TryDequeue(out PersistentEvent myEvent, out long priority);
+                if (myEvent.GetID() != eventID)
+                {
+                    temporalQ.Enqueue(myEvent);
+                    temporalPrioritiesQ.Enqueue(priority);
+                }
+
+                ++i;
+            }
+
+            while (temporalPrioritiesQ.Count > 0)
+            {
+                _persistentEvents.Enqueue(temporalQ.Dequeue(), temporalPrioritiesQ.Dequeue());
+            }
+
+            mutPersistentEvents.ReleaseMutex();
+        }
 
         public void PushEvent(Event e)
         {
