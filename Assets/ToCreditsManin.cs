@@ -1,11 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TelemetrySystem;
 
 public class ToCreditsManin : MonoBehaviour
 {
     public void LoadFinalScene()
     {
+        //Telemetry
+        Tracker.Instance.PushEvent(new LevelEndEvent(GameManager.Instance.PLAY_NAME));
+
         GameManager.Instance.LoadScene("EndCinematic");
     }
 

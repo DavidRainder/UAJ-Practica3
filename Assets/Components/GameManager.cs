@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TelemetrySystem;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -49,7 +50,7 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     string MENU_NAME = "StartMenu";
     [SerializeField]
-    public string PLAY_NAME = "Test - PlayScene";
+    public string PLAY_NAME = "GameScene";
 
     [SerializeField]
     public string CINEMATIC_NAME = "StartCinematic";
@@ -74,12 +75,24 @@ public class GameManager : MonoBehaviour
 
     private int numPlayers = 2;
 
+    //Telemetry
+    private bool beginingGameScene = true;
+
     public void OnSceneLoaded(Scene a, LoadSceneMode b)
     {
         if (SceneManager.GetActiveScene().name == PLAY_NAME)
         {
             players[0] = GameObject.Find("Marvin");
             players[1] = GameObject.Find("Bo");
+           
+            //Telemetry
+            if (beginingGameScene)
+            {
+                Tracker.Instance.PushEvent(new LevelStartEvent(PLAY_NAME));
+                beginingGameScene = false;
+            }
+            Tracker.Instance.TrackPersistentEvent(new PlayerPositionEvent(players[0].transform, 100));
+            Tracker.Instance.TrackPersistentEvent(new PlayerPositionEvent(players[1].transform, 100));
         }
     }
 
@@ -118,10 +131,9 @@ public class GameManager : MonoBehaviour
         continuedGame = true;
         CheckpointComponent.ChangePositionOnLoad(true);
         PlayerPrefs.SetInt("LastCheckpoint", currentCheckpoint);
-
         sceneChanger.SetTrigger("FadeOut");
     }
-    
+
     public void HideTongue()
     {
         tongue.SetActive(false);
@@ -138,6 +150,11 @@ public class GameManager : MonoBehaviour
 
     public void FreezePlayers(bool enable)
     {
+        //Telemetry
+        Tracker.Instance.PushEvent(new PlayerDeathEvent(players[0].transform.position));
+        Tracker.Instance.PushEvent(new PlayerDeathEvent(players[1].transform.position));
+        Tracker.Instance.StopTrackingPersistentEvent("PlayerPosition");
+
         for (int i = 0; i < numPlayers; ++i)
         {
             players[i].GetComponent<MovementComponent>().FreezePlayer(enable);
@@ -147,6 +164,10 @@ public class GameManager : MonoBehaviour
     public void LoadScene(string newScene)
     {
         if (newScene == PLAY_NAME || newScene == CINEMATIC_NAME) sceneChanger.SetTrigger("FadeIn");
+
+        //Telemetry
+        Tracker.Instance.PushEvent(new ChangeSceneEvent(SceneManager.GetActiveScene().name, newScene));
+
         SceneManager.LoadScene(newScene);
     }
 
@@ -157,6 +178,9 @@ public class GameManager : MonoBehaviour
 
     public void LoadSceneNoFade(string newScene)
     {
+        //Telemetry
+        Tracker.Instance.PushEvent(new ChangeSceneEvent(SceneManager.GetActiveScene().name, newScene));
+
         SceneManager.LoadScene(newScene);
     }
 
@@ -187,6 +211,9 @@ public class GameManager : MonoBehaviour
 
     public void ExitApplication()
     {
+        //Telemetry
+        Tracker.Instance.PushEvent(new GameEndEvent());
+
         Application.Quit();
     }
 
@@ -200,6 +227,10 @@ public class GameManager : MonoBehaviour
         {
             obj.Pause();
         }
+
+        //Telemetry
+        Tracker.Instance.PushEvent(new LevelPauseEvent(PLAY_NAME));
+        Tracker.Instance.StopTrackingPersistentEvent("PlayerPosition");
     }
 
     public void ResumeGame()
@@ -209,6 +240,11 @@ public class GameManager : MonoBehaviour
         {
             obj.Resume();
         }
+
+        //Telemetry
+        Tracker.Instance.PushEvent(new LevelUnpauseEvent(PLAY_NAME));
+        Tracker.Instance.TrackPersistentEvent(new PlayerPositionEvent(players[0].transform, 100));
+        Tracker.Instance.TrackPersistentEvent(new PlayerPositionEvent(players[1].transform, 100));
     }
 
     public void AddMovableObject(MovableObject newObject)
@@ -248,6 +284,10 @@ public class GameManager : MonoBehaviour
     {
         if(SceneManager.GetActiveScene().name == PLAY_NAME && Input.GetKeyDown(KeyCode.R))
         {
+            //Telemetry
+            Tracker.Instance.PushEvent(new LevelRestartEvent(PLAY_NAME));
+            Tracker.Instance.StopTrackingPersistentEvent("PlayerPosition");
+
             ResetScene();
         }
     }

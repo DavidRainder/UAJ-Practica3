@@ -58,16 +58,7 @@ namespace TelemetrySystem {
 
             Parallel.Invoke(DumpEvents, PersistentEventTracking);
 
-            PushEvent(new InteractionEvent("miau", true));
-            TrackPersistentEvent(new PlayerPositionEvent(this.transform, 2));
-
-            StartCoroutine(miau());
-        }
-
-        IEnumerator miau()
-        {
-            yield return new WaitForSeconds(1.5f);
-            StopTrackingPersistentEvent("PlayerPosition");
+            PushEvent(new GameStartEvent());
         }
 
         private void OnDestroy()
@@ -211,7 +202,7 @@ namespace TelemetrySystem {
         }
 
         /// <summary>
-        /// Matamos el thread que está llevando el XML y 
+        /// Matamos el thread que estï¿½ llevando el XML y 
         /// creamos uno nuevo en formato JSON
         /// tras un tiempo igual al tiempo entre
         /// 'dumps' de la cola de eventos
@@ -327,8 +318,8 @@ namespace TelemetrySystem {
                 
                 await Task.Run(async () => { await Task.Delay((int)(_currentPriority - currentTimeStamp)); });
 
-                // Este trozo de código comprueba si el evento, por alguna razón, ha sido destruído durante la espera.
-                // Solo va a ser destruído en caso de que llegue un "StopTrackingPersistentEvent".
+                // Este trozo de cï¿½digo comprueba si el evento, por alguna razï¿½n, ha sido destruï¿½do durante la espera.
+                // Solo va a ser destruï¿½do en caso de que llegue un "StopTrackingPersistentEvent".
                 if (_currentPersistentEvent != null)
                 {
                     currentTimeStamp = _currentPriority;
@@ -397,7 +388,7 @@ namespace TelemetrySystem {
 
         public void PushEvent(Event e)
         {
-            // Si el evento está activo...
+            // Si el evento estï¿½ activo...
             if (!_eventRegistry.IsEventActive(e.GetID())) return;
 
             // LOCK MUTEX
@@ -413,7 +404,7 @@ namespace TelemetrySystem {
 
         public void TrackPersistentEvent(PersistentEvent e)
         {
-            // Si está activo... 
+            // Si estï¿½ activo... 
             if (!_eventRegistry.IsEventActive(e.GetID())) return;
 
             e.UpdatePersistentTime();

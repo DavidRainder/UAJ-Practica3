@@ -958,9 +958,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec09e08bf8179004896f238a900d2ecb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playSceneName: 
+  MENU_NAME: StartMenu
+  PLAY_NAME: GameScene
+  CINEMATIC_NAME: StartCinematic
+  PLAYER_1_NAME: Marvin
+  PLAYER_2_NAME: Bo
   numCheckpoints: 0
-  checkpoints: []
 --- !u!4 &1727970046
 Transform:
   m_ObjectHideFlags: 0

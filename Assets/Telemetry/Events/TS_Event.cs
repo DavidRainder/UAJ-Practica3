@@ -79,13 +79,45 @@ namespace TelemetrySystem
 public class GameStartEvent : TelemetrySystem.Event
 {
     public GameStartEvent() : base(DateTimeOffset.UtcNow) { }
-    public override string GetID() => "ApplicationStart";
+    public override string GetID() => "GameStart";
 }
 
 public class GameEndEvent : TelemetrySystem.Event
 {
     public GameEndEvent() : base(DateTimeOffset.UtcNow) { }
-    public override string GetID() => "ApplicationEnd";
+    public override string GetID() => "GameEnd";
+}
+
+public class ChangeSceneEvent : TelemetrySystem.Event
+{
+    public string _oldScene;
+    public string _newScene;
+
+    public ChangeSceneEvent(string oldScene, string newScene) : base(DateTimeOffset.UtcNow)
+    {
+        _oldScene = oldScene;
+        _newScene = newScene;
+    }
+
+    public override string GetID() => "ChangeScene";
+
+    public override string ToJSON()
+    {
+        return base.ToJSON() +
+            $", \"old_scene\": \"{_oldScene}\", \"new_scene\": \"{_newScene}\"";
+    }
+
+    public override void ToXML(XmlDocument doc, XmlNode eventsNode, out XmlNode myEvent)
+    {
+        base.ToXML(doc, eventsNode, out myEvent);
+
+        XmlAttribute oldScene = doc.CreateAttribute("old_scene");
+        oldScene.Value = _oldScene;
+        myEvent.Attributes.Append(oldScene);
+        XmlAttribute newScene = doc.CreateAttribute("new_scene");
+        newScene.Value = _newScene;
+        myEvent.Attributes.Append(newScene);
+    }
 }
 
 public abstract class LevelEvent : TelemetrySystem.Event
