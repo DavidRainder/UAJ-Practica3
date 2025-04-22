@@ -119,6 +119,8 @@ public class GameManager : MonoBehaviour
             }
 
             ResetPlayerPosition();
+
+            //Telemetry
             Tracker.Instance.TrackPersistentEvent(new PlayerPositionEvent(players[0].transform, 100));
             Tracker.Instance.TrackPersistentEvent(new PlayerPositionEvent(players[1].transform, 100));
         }
@@ -205,7 +207,6 @@ public class GameManager : MonoBehaviour
     public void BackToMenu()
     {
         //Telemetry
-        //Tracker.Instance.PushEvent(new LevelUnpauseEvent(PLAY_NAME));
         Tracker.Instance.PushEvent(new ChangeSceneEvent(SceneManager.GetActiveScene().name, MENU_NAME));
         beginingGameScene = true;
 

@@ -5,7 +5,11 @@ using UnityEngine;
 
 public class InteractionComponent : MonoBehaviour
 {
-    // Start is called before the first frame update
+    //Telemetry: Dada la complegidad del evento, y que el codigo original
+    //fue realizado por 11 personas en una jam de 3 dias, por lo que la calidad
+    //de este deja bastante que desear, este script ha sido creado enteramente
+    //con fines de telemetricos (como excepcion)
+
     enum type {Moss, Button};
 
     private string playerName;
@@ -69,10 +73,10 @@ public class InteractionComponent : MonoBehaviour
                         {
                             Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
                             checkMoss = false;
-                            return; // salir, ya sabemos que fue fallo
+                            return;
                         }
                     }
-                    if (Input.GetKey(KeyCode.RightShift)) // Si no hubo teclas prohibidas, ¿se pulsó Q?
+                    if (Input.GetKey(KeyCode.RightShift))
                     {
                         if (playerName != "Bo")
                         {
