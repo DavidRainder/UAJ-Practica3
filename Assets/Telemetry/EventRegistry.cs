@@ -28,10 +28,6 @@ public class EventRegistry : MonoBehaviour
             if(eventName.activation)
                 eventsRegistry.Add(eventName.name);    
         }
-
-        Debug.Log($"Eventos activos registrados: " + eventsRegistry.Count);
     }
-
 }
-
 }

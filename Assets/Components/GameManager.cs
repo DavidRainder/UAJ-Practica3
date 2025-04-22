@@ -292,7 +292,7 @@ public class GameManager : MonoBehaviour
         if(SceneManager.GetActiveScene().name == PLAY_NAME && Input.GetKeyDown(KeyCode.R))
         {
             //Telemetry
-            Tracker.Instance.PushEvent(new LevelRestartEvent(PLAY_NAME));
+            Tracker.Instance.PushEvent(new LevelRestartEvent(PLAY_NAME, players[0].transform.position));
             Tracker.Instance.StopTrackingPersistentEvent("PlayerPosition");
 
             ResetScene();

@@ -3,17 +3,8 @@ using UnityEngine;
 using Utils;
 using System.Threading.Tasks;
 using System.Threading;
-using System.Text;
-using System.IO;
-using System;
-using System.Xml;
-using System.Collections;
-using TMPro;
-//using Firebase;
-//using Firebase.Database;
 
 namespace TelemetrySystem {
-
 
     public class Tracker : MonoBehaviour
     {
@@ -26,7 +17,6 @@ namespace TelemetrySystem {
             {
                 _instance = this;
                 DontDestroyOnLoad(gameObject);
-
             }
             else
             {
@@ -36,263 +26,112 @@ namespace TelemetrySystem {
         #endregion
 
         enum SerializationFormat { JSON, XML }
+        [SerializeField] SerializationFormat _outputFormat = SerializationFormat.JSON;
+
+        enum PersistenceType { File, Server}
+        [SerializeField] PersistenceType _saveFormat = PersistenceType.File;
 
         #region Parameters
-        [SerializeField] float _timeToDumpQueue;
-        [SerializeField] string _fileDestinationName = "Telemetry";
-        [SerializeField] SerializationFormat _outputFormat = SerializationFormat.JSON;
-        public string finalFileNameDB = "";
+        [SerializeField] float timeToDumpQueue;
+        string filePath = "";
+        [SerializeField] string serverPath = "http://localhost:5000"; //Este path es de ejemplo, habria que cambiarlo al link del servidor
         #endregion
-
-        private void Start()
-        {
-            _events = new Queue<Event>();
-            _persistentEvents = new PriorityQueue<PersistentEvent, long>();
-            _eventRegistry = GetComponent<EventRegistry>();
-
-            // error handling de ^^
-
-            mutEvents = new Mutex();
-            mutPersistentEvents = new Mutex();
-
-            Parallel.Invoke(DumpEvents, PersistentEventTracking);
-
-            PushEvent(new GameStartEvent());
-        }
-
-        private void OnDestroy()
-        {
-            destroyed = true;
-            killDumpEvents = true;
-            killPersistentEvents = true;
-        }
 
         #region Private Variables
         private Mutex mutEvents;
         private Mutex mutPersistentEvents;
 
-        static bool destroyed = false;
-        static bool killDumpEvents = false;
-        static bool killPersistentEvents = false;
+        bool destroyed = false;
+        bool killDumpEvents = false;
+        bool killPersistentEvents = false;
 
         EventRegistry _eventRegistry = null;
+        private IPersistence persistenceObject;
 
-        Queue<Event> _events;
+        Queue<TrackerEvent> events;
         // el Long es el tiempo en POSIX en el que se debe ejecutar
-        PriorityQueue<PersistentEvent, long> _persistentEvents;
-
-        int numSession = 0;
-        string baseFileName = "";
-        string finalFileName = "";
-
-        // For XML Serialization
-        XmlDocument xmlDocument = null;
-        XmlNode eventsNode = null;
+        PriorityQueue<TrackerPersistentEvent, long> persistentEvents;
         #endregion
 
-        private void CheckPreviousFiles(string fileExtension)
+        private void Start()
         {
-            DirectoryInfo directoryInfo = new DirectoryInfo(Application.persistentDataPath + "/");
+            filePath = Application.persistentDataPath + "/";
+            events = new Queue<TrackerEvent>();
+            persistentEvents = new PriorityQueue<TrackerPersistentEvent, long>();
+            _eventRegistry = GetComponent<EventRegistry>();
 
-            numSession = 0;
-            baseFileName = _fileDestinationName + DateTime.Now.ToString("-d-M-yyyy") + fileExtension;
+            //if(_eventRegistry == null)
+            // error handling de ^^
 
-            foreach (FileInfo info in directoryInfo.GetFiles())
+            switch (_saveFormat)
             {
-                string f = info.Name.Split("_")[1];
-                if (f == baseFileName)
-                {
-                    numSession++;
-                }
+                case PersistenceType.File:
+                    switch (_outputFormat)
+                    {
+                        case SerializationFormat.JSON:
+                            persistenceObject = new FilePersistence(filePath, new JsonSerializer());
+                            break;
+                        case SerializationFormat.XML:
+                            persistenceObject = new FilePersistence(filePath, new XMLSerializer());
+                            break;
+
+                    }
+                    break;
+
+                case PersistenceType.Server:
+                    persistenceObject = new ServerPersistence(serverPath, new JsonSerializer());
+                    break;
+
             }
 
-            finalFileName = Application.persistentDataPath + "/" + numSession + "_" + baseFileName;
-            finalFileNameDB = Application.streamingAssetsPath + "/" + numSession + "_" + baseFileName;
+            mutEvents = new Mutex();
+            mutPersistentEvents = new Mutex();
 
+            PushEvent(new GameStartEvent());
+
+            Parallel.Invoke(DumpEvents, PersistentEventTracking);
         }
 
-        private void OpenAndStartXMLFile()
+        private void OnDestroy()
         {
-            CheckPreviousFiles(".xml");
+            PushEvent(new GameEndEvent());
 
-            xmlDocument = new XmlDocument();
-            eventsNode = xmlDocument.CreateElement("events");
-            xmlDocument.AppendChild(eventsNode);
-        }
-
-        private void GetXMLContentFromEvent(Event e)
-        {
-            e.ToXML(xmlDocument, eventsNode, out XmlNode myEvent);
-        }
-
-        private void CloseAndEndXMLFile()
-        {
-            if (xmlDocument != null) {
-                try
-                {
-                    xmlDocument.Save(finalFileName);
-                }
-                catch (XmlException e)
-                {
-                    Debug.LogError($"XmlDocument couldn't be saved: {e.Message} \n" +
-                    "Some events have been lost.\n" +
-                    "Changing to JSON format");
-
-                    StartCoroutine(ChangeFromXMLToJSON());
-                }
-            }
-            else
-            {
-                Debug.LogError("XmlDocument couldn't be saved.\n" +
-                   "Some events have been lost.\n" +
-                   "Changing to JSON format");
-                StartCoroutine(ChangeFromXMLToJSON());
-            }
-        }
-
-        private void OpenAndStartJSONFile()
-        {
-            CheckPreviousFiles(".json");
-
-            WriteToFile("{\n\"events\": [\n");
-        }
-
-        bool firstEvent = true;
-        private string GetJSONContentFromEvent(Event e)
-        {
-            string content = "";
-
-            if (firstEvent)
-            {
-                content += "{";
-                firstEvent = false;
-            }
-            else content += ",{";
-
-            content += e.ToJSON();
-            content += "}\n";
-
-            return content;
-        }
-
-        private void CloseAndEndJSONFile()
-        {
-            WriteToFile("\n]\n}");
-        }
-
-        private void WriteToFile(string content)
-        {
-            var encodedContent = new UTF8Encoding(true).GetBytes(content);
-
-            try
-            {
-                FileStream file = File.Open(
-                    finalFileName,
-                    FileMode.Append);
-
-                file.Write(encodedContent);
-                file.Close();
-            } 
-            catch (Exception e)
-            {
-                Debug.LogError("Couldn't write to file. Maybe disk is full. Pleas check. Shutting Tracking System down");
-                Destroy(gameObject);
-            }
-        }
-
-        /// <summary>
-        /// Matamos el thread que est� llevando el XML y 
-        /// creamos uno nuevo en formato JSON
-        /// tras un tiempo igual al tiempo entre
-        /// 'dumps' de la cola de eventos
-        /// </summary>
-        /// <returns></returns>
-        private IEnumerator ChangeFromXMLToJSON()
-        {
+            destroyed = true;
             killDumpEvents = true;
-            yield return new WaitForSeconds(_timeToDumpQueue);
-            killDumpEvents = false;
-            _outputFormat = SerializationFormat.JSON;
-            Parallel.Invoke(DumpEvents);
+            killPersistentEvents = true;
+
+            ForceFlush();
         }
 
-        private void OpenDumpingFile()
+        private void ForceFlush()
         {
-            switch (_outputFormat)
-            {
-                case SerializationFormat.JSON:
-                    OpenAndStartJSONFile();
-                    break;
-                case SerializationFormat.XML:
-                    OpenAndStartXMLFile();
-                    break;
-            }
+            mutEvents.WaitOne();
+            
+            persistenceObject.Flush(ref events);
+
+            mutEvents.ReleaseMutex();
+
+            persistenceObject.EndFlush();
         }
 
-        private void GetDumpingContent()
+        private async void DumpEvents()
         {
-            switch (_outputFormat)
-            {
-                case SerializationFormat.JSON:
-
-                    string content = "";
-                    while (_events.Count > 0)
-                    {
-                        Event e = _events.Dequeue();
-                        content += GetJSONContentFromEvent(e);
-                    }
-
-                    WriteToFile(content);
-
-                    break;
-                case SerializationFormat.XML:
-
-                    while (_events.Count > 0)
-                    {
-                        GetXMLContentFromEvent(_events.Dequeue());
-                    }
-
-                    break;
-            }
-        }
-
-        private void CloseDumpingFile() {
-            switch (_outputFormat)
-            {
-                case SerializationFormat.JSON:
-                    CloseAndEndJSONFile();
-                    break;
-                case SerializationFormat.XML:
-                    CloseAndEndXMLFile();
-                    break;
-            }
-        }
-
-        async void DumpEvents()
-        {
-            OpenDumpingFile();
-
             while (!destroyed && !killDumpEvents)
             {
-                await Task.Delay((int)(_timeToDumpQueue * 1000));
-                
                 mutEvents.WaitOne();
-
-                GetDumpingContent();
-
+                persistenceObject.Flush(ref events);
                 mutEvents.ReleaseMutex();
 
+                await Task.Delay((int)(timeToDumpQueue * 1000));
             }
-
-            CloseDumpingFile();
         }
 
-        PersistentEvent _currentPersistentEvent;
+        TrackerPersistentEvent _currentPersistentEvent;
         long _currentPriority;
 
         async void PersistentEventTracking()
         {
-            bool empty = !_persistentEvents.TryPeek(out PersistentEvent _, out long firstPrio);
+            bool empty = !persistentEvents.TryPeek(out TrackerPersistentEvent _, out long firstPrio);
             
             if (empty)
                 return;
@@ -304,7 +143,7 @@ namespace TelemetrySystem {
                 mutPersistentEvents.WaitOne();
 
                 // pillas un evento
-                empty = !_persistentEvents.TryPeek(out _currentPersistentEvent, out _currentPriority);
+                empty = !persistentEvents.TryPeek(out _currentPersistentEvent, out _currentPriority);
                 
                 // unlock
                 mutPersistentEvents.ReleaseMutex();
@@ -316,8 +155,9 @@ namespace TelemetrySystem {
                 
                 await Task.Run(async () => { await Task.Delay((int)(_currentPriority - currentTimeStamp)); });
 
-                // Este trozo de c�digo comprueba si el evento, por alguna raz�n, ha sido destru�do durante la espera.
-                // Solo va a ser destru�do en caso de que llegue un "StopTrackingPersistentEvent".
+                // Este trozo de codigo comprueba si el evento, por alguna razon, ha sido destruido durante la espera.
+                // Solo va a ser destruido en caso de que llegue un "StopTrackingPersistentEvent".
+                // O también al haber sido destruído el objeto. 
                 if (_currentPersistentEvent != null)
                 {
                     currentTimeStamp = _currentPriority;
@@ -337,9 +177,9 @@ namespace TelemetrySystem {
                     // mutex
                     mutPersistentEvents.WaitOne();
 
-                    _persistentEvents.Dequeue();
+                    persistentEvents.Dequeue();
 
-                    _persistentEvents.Enqueue(_currentPersistentEvent, _currentPersistentEvent.AdvanceTimer());
+                    persistentEvents.Enqueue(_currentPersistentEvent, _currentPersistentEvent.AdvanceTimer());
 
                     _currentPersistentEvent = null;
 
@@ -354,14 +194,14 @@ namespace TelemetrySystem {
             mutPersistentEvents.WaitOne();
 
             int i = 0;
-            int n = _persistentEvents.Count;
+            int n = persistentEvents.Count;
              
-            Queue<PersistentEvent> temporalQ = new Queue<PersistentEvent>();
+            Queue<TrackerPersistentEvent> temporalQ = new Queue<TrackerPersistentEvent>();
             Queue<long> temporalPrioritiesQ = new Queue<long>();
 
-            while(i < n && _persistentEvents.Count > 0)
+            while(i < n && persistentEvents.Count > 0)
             {
-                _persistentEvents.TryDequeue(out PersistentEvent myEvent, out long priority);
+                persistentEvents.TryDequeue(out TrackerPersistentEvent myEvent, out long priority);
                 if (myEvent.GetID() != eventID)
                 {
                     temporalQ.Enqueue(myEvent);
@@ -373,7 +213,7 @@ namespace TelemetrySystem {
 
             while (temporalPrioritiesQ.Count > 0)
             {
-                _persistentEvents.Enqueue(temporalQ.Dequeue(), temporalPrioritiesQ.Dequeue());
+                persistentEvents.Enqueue(temporalQ.Dequeue(), temporalPrioritiesQ.Dequeue());
             }
 
             if (_currentPersistentEvent != null && _currentPersistentEvent.GetID() == eventID)
@@ -384,24 +224,24 @@ namespace TelemetrySystem {
             mutPersistentEvents.ReleaseMutex();
         }
 
-        public void PushEvent(Event e)
+        public void PushEvent(TrackerEvent e)
         {
-            // Si el evento est� activo...
+            // Si el evento esta activo...
             if (!_eventRegistry.IsEventActive(e.GetID())) return;
 
             // LOCK MUTEX
             mutEvents.WaitOne();
             
-            _events.Enqueue(e);
+            events.Enqueue(e);
 
             // UNLOCK MUTEX
             mutEvents.ReleaseMutex();
 
         }
 
-        public void TrackPersistentEvent(PersistentEvent e)
+        public void TrackPersistentEvent(TrackerPersistentEvent e)
         {
-            // Si est� activo... 
+            // Si esta activo... 
             if (!_eventRegistry.IsEventActive(e.GetID())) return;
 
             e.UpdatePersistentTime();
@@ -410,9 +250,9 @@ namespace TelemetrySystem {
             // LOCK MUTEX
             mutPersistentEvents.WaitOne();
 
-            bool wasEmpty = _persistentEvents.Count == 0;
+            bool wasEmpty = persistentEvents.Count == 0;
 
-            _persistentEvents.Enqueue(e, e._currentPersistentTime);
+            persistentEvents.Enqueue(e, e._currentPersistentTime);
 
             // UNLOCK MUTEX
             mutPersistentEvents.ReleaseMutex();
