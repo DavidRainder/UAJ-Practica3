@@ -5,13 +5,26 @@ using System.Threading.Tasks;
 using System.Threading;
 using System;
 
-namespace TelemetrySystem {
-
+namespace TelemetrySystem
+{
     public class Tracker : MonoBehaviour
     {
         #region Singleton
         private static Tracker _instance = null;
-        public static Tracker Instance { get { return _instance; } }
+        public static Tracker Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    Debug.LogError("Tracker is not present on scene. " +
+                        "In order to register events you must include the Telemetry prefab in the " +
+                        "initial scene of your application. " +
+                        "Now returning null to the Tracker.Instance call.");
+                }
+                return _instance;
+            }
+        }
         private void Awake()
         {
             if (_instance == null)
@@ -35,35 +48,35 @@ namespace TelemetrySystem {
         /// <summary>
         /// El tipo de persistencia que usará el TelemetrySystem.
         /// </summary>
-        enum PersistenceType { File, Server}
+        enum PersistenceType { File, Server }
 
         #region Parameters
 
-        [SerializeField, 
+        [SerializeField,
             Tooltip("El tipo de persistencia que utilizará el sistema." +
             "El sistema guarda los archivos en 'Directory' en caso de escoger persistencia por 'File'." +
             "Si se ha escogido un Persistency Type de tipo 'Server', " +
-            "el formato de los datos siempre será JSON.")] 
+            "el formato de los datos siempre será JSON.")]
         PersistenceType persistencyType = PersistenceType.File;
 
-        [SerializeField, 
+        [SerializeField,
             Tooltip("El formato de los archivos que generará el sistema con los trazas. " +
             "Si se ha escogido un Persistency Type de tipo 'Server', " +
-            "el formato del archivo siempre será en JSON.")] 
+            "el formato del archivo siempre será en JSON.")]
         SerializationFormat _outputFormat = SerializationFormat.JSON;
 
-        [SerializeField, 
-            Tooltip("Tiempo que tardará el sistema en hacer el volcado de eventos a archivo/servidor")] 
+        [SerializeField,
+            Tooltip("Tiempo que tardará el sistema en hacer el volcado de eventos a archivo/servidor")]
         float timeToDumpQueue;
 
-        [SerializeField, 
+        [SerializeField,
             Tooltip("Directorio donde se guardarán los archivos generados al escoger el tipo de persistencia " +
             "por archivos. Para escoger el valor por defecto (Application.persistenDataPath), ponga 'DEFAULT' como valor")]
         string directory = "DEFAULT";
 
-        [SerializeField, 
+        [SerializeField,
             Tooltip("URL del servidor web al que se deberían enviar las trazas." +
-            "Esta opción no se utiliza si se utiliza un Persistency Type de tipo 'File'")] 
+            "Esta opción no se utiliza si se utiliza un Persistency Type de tipo 'File'")]
         string serverPath = "http://localhost:5000"; //Este path es de ejemplo, habria que cambiarlo al link del servidor
         #endregion
 
@@ -80,10 +93,10 @@ namespace TelemetrySystem {
         bool killPersistentEvents = false; // Destruye el hilo que realiza el tracking de eventos persistentes
 
         // Referencia al EventRegistry
-        EventRegistry _eventRegistry = null; 
+        EventRegistry _eventRegistry = null;
 
         // Objeto con el que realizaremos la persistencia
-        private IPersistence persistenceObject; 
+        private IPersistence persistenceObject;
 
         // Cola de eventos
         Queue<TrackerEvent> events;
@@ -104,7 +117,7 @@ namespace TelemetrySystem {
         private void Start()
         {
             // Utiliza la ruta por defecto de escritura de archivos.
-            if(directory == "DEFAULT") 
+            if (directory == "DEFAULT")
                 directory = Application.persistentDataPath + "/";
 
             // Creamos las colas de eventos
@@ -115,7 +128,7 @@ namespace TelemetrySystem {
             _eventRegistry = GetComponent<EventRegistry>();
 
             // En caso de no conseguirla, trataremos todos los eventos como activos
-            if(_eventRegistry == null)
+            if (_eventRegistry == null)
             {
                 Debug.LogError("EventRegistry component was not found. All events received will be accepted as if they were Active.");
             }
@@ -187,16 +200,16 @@ namespace TelemetrySystem {
         private void ForceFlush()
         {
             mutEvents.WaitOne();
-            
+
             try
             {
                 persistenceObject.Flush(ref events);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Debug.LogError($"Error encountered while registering events: {e.Message} " +
                     "Telemetry System is shutting down.");
-                
+
                 mutEvents.ReleaseMutex();
                 Destroy(gameObject);
             }
@@ -265,30 +278,30 @@ namespace TelemetrySystem {
         {
             // Comprobamos si la cola está vacía
             bool empty = !persistentEvents.TryPeek(out TrackerPersistentEvent _, out long firstPrio);
-            
+
             // Si la cola está vacía, salimos del método
             if (empty)
                 return;
-            
+
             // Establecemos el tiempo actual como el tiempo en el que se debe ejecutar el primer evento
             long currentTimeStamp = firstPrio;
 
             // Mientras no se haya destruído el tracker o no se quiera detener la función...
-            while(!destroyed && !killPersistentEvents)
+            while (!destroyed && !killPersistentEvents)
             {
                 // mutex
                 mutPersistentEvents.WaitOne();
 
                 // Cogemos un evento de la cola
                 empty = !persistentEvents.TryPeek(out _currentPersistentEvent, out _currentPriority);
-                
+
                 // unlock
                 mutPersistentEvents.ReleaseMutex();
 
                 // Si resulta estar vacía, por cualquiera razón, salimos del método
-                if (empty) 
+                if (empty)
                     return;
-                
+
                 // Esperamos el tiempo necesario entre la prioridad del evento actual y el tiempo del último 
                 // evento procesado
                 await Task.Run(async () => { await Task.Delay((int)(_currentPriority - currentTimeStamp)); });
@@ -342,7 +355,7 @@ namespace TelemetrySystem {
         {
             int i = 0;
             int n = persistentEvents.Count;
-             
+
             // Colas temporales para guardar los valores de la cola de prioridad de eventos que no deban borrarse
             Queue<TrackerPersistentEvent> temporalQ = new Queue<TrackerPersistentEvent>();
             Queue<long> temporalPrioritiesQ = new Queue<long>();
@@ -351,7 +364,7 @@ namespace TelemetrySystem {
             mutPersistentEvents.WaitOne();
 
             // recorremos la cola de eventos persistentes
-            while(i < n && persistentEvents.Count > 0)
+            while (i < n && persistentEvents.Count > 0)
             {
                 persistentEvents.TryDequeue(out TrackerPersistentEvent myEvent, out long priority);
 
@@ -363,8 +376,8 @@ namespace TelemetrySystem {
                     temporalPrioritiesQ.Enqueue(priority);
                 }
                 // en caso contrario...
-                    // No necesitamos hacer nada, ya que el evento se ha sacado de la 
-                    // cola tal como queríamos
+                // No necesitamos hacer nada, ya que el evento se ha sacado de la 
+                // cola tal como queríamos
 
                 ++i;
             }
@@ -414,7 +427,7 @@ namespace TelemetrySystem {
 
             // mutex lock
             mutEvents.WaitOne();
-            
+
             // Pusheado a la cola
             events.Enqueue(e);
 
@@ -443,7 +456,7 @@ namespace TelemetrySystem {
             mutPersistentEvents.ReleaseMutex();
 
             // Si la cola estaba vacía, llamamos de nuevo al método de tracking persistente
-            if(wasEmpty)
+            if (wasEmpty)
             {
                 Parallel.Invoke(PersistentEventTracking);
             }
