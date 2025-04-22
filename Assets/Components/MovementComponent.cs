@@ -217,55 +217,9 @@ public class MovementComponent : MonoBehaviour
         UpdateStepSound();
         UpdateGroundSound();
 
-        //Telemetry
-        Debug.Log("checkMoss " + checkMoss);
-        if (checkMoss)
-        {
-            if (Input.anyKeyDown)
-            {
-                bool isMovementKey =
-                    Input.GetKeyDown(KeyCode.UpArrow) ||
-                    Input.GetKeyDown(KeyCode.LeftArrow) ||
-                    Input.GetKeyDown(KeyCode.RightArrow) ||
-                    Input.GetKeyDown(KeyCode.W) ||
-                    Input.GetKeyDown(KeyCode.A) ||
-                    Input.GetKeyDown(KeyCode.D);
-
-                if (Input.GetKeyDown(KeyCode.RightShift))
-                {
-                    var a = gameObject.GetComponent<WallGrabComponent>();
-                    if(a != null) Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
-                    else Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
-                }
-                else if (!isMovementKey)
-                {
-                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
-                }
-            }
-        }
+       
     }
-    //private void OnCollisionEnter2D(Collision2D collision)
-    //{
-    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
-    //    {
-    //        checkMoss = true;
-    //    }
-    //}
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.GetComponent<MossComponent>() != null)
-        {
-            //checkMoss = false;
-        }
-    }
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        //checkMoss = false;
-        if (collision.gameObject.GetComponent<MossComponent>() != null)
-        {
-            checkMoss = true;
-        }
-    }
+    
 }
 
 

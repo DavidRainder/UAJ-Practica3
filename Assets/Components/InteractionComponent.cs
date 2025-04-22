@@ -8,7 +8,6 @@ public class InteractionComponent : MonoBehaviour
     // Start is called before the first frame update
     enum type {Moss, Button};
 
-    private bool check;
     private string playerName;
     [SerializeField]
     private type tipo;
@@ -26,13 +25,20 @@ public class InteractionComponent : MonoBehaviour
         };
     }
 
-    private void OnTriggerStay2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         MovementComponent player = collision.GetComponent<MovementComponent>();
 
-        if(player!=null )
+        if(player != null && tipo == type.Moss)
         {
-            check = true;
+            checkMoss = true;
+            checkButton = false;
+            playerName = player.name;
+        }
+        else if (player != null && tipo == type.Button)
+        {
+            checkButton = true;
+            checkMoss = false;
             playerName = player.name;
         }
     }
@@ -43,14 +49,15 @@ public class InteractionComponent : MonoBehaviour
 
         if (player != null)
         {
-            check = false;
+            checkMoss = false;
+            checkButton = false;
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (check)
+        if (checkMoss)
         {
             if (Input.anyKey)
             {
@@ -61,6 +68,7 @@ public class InteractionComponent : MonoBehaviour
                         if (Input.GetKey(key) && (!allowedKeys.Contains(key) && key != KeyCode.RightShift))
                         {
                             Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
+                            checkMoss = false;
                             return; // salir, ya sabemos que fue fallo
                         }
                     }
@@ -69,11 +77,19 @@ public class InteractionComponent : MonoBehaviour
                         if (playerName != "Bo")
                         {
                             Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
+
                         }
                         else Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), true));
+                        checkMoss = false;
                     }
                 }
+            }
+        }
 
+        if (checkButton)
+        {
+            if (Input.anyKeyDown)
+            {
                 if (tipo == type.Button)
                 {
                     foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
