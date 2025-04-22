@@ -45,9 +45,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa95f7e29ce53f54fa00fd114c1f4b09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  persistencyType: 0
   _outputFormat: 0
-  _saveFormat: 0
   timeToDumpQueue: 10
+  directory: DEFAULT
   serverPath: http://localhost:5000
 --- !u!114 &7295492144139846800
 MonoBehaviour:

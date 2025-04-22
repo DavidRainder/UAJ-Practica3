@@ -1,6 +1,11 @@
 using System;
 using System.Xml;
 
+/// <summary>
+/// Clase abstracta que tiene un string "nombre de nivel"
+/// Puede actuar como padre de todos los eventos que sucedan dentro de un nivel
+/// y el nombre del nivel tenga relevancia
+/// </summary>
 public abstract class TrackerLevelEvent : TelemetrySystem.TrackerEvent
 {
     public string levelName;
