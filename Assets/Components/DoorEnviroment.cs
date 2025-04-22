@@ -38,8 +38,6 @@ public class DoorEnviroment : MonoBehaviour
 
         if (numTonguesThroughDoor > 0)
         { 
-            Debug.LogWarning("pierdeees");
-            Debug.Log("LLamando a corrutina de que ela gente explote");
             GameManager.Instance.FreezePlayers(true);
             GameManager.Instance.ResetScene();
         }
@@ -51,7 +49,6 @@ public class DoorEnviroment : MonoBehaviour
 
         if(tongue != null)
         {
-            Debug.LogWarning("AAAAAAAAAAAAAAAAAAA");
             numTonguesThroughDoor++;
         }
     }
@@ -63,7 +60,6 @@ public class DoorEnviroment : MonoBehaviour
 
         if (tongue != null)
         {
-            Debug.LogWarning("BBBBB");
             numTonguesThroughDoor--;
         }
     }

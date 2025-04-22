@@ -7,6 +7,5 @@ public class MossComponent : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("I AM A MOSS");   
     }
 }

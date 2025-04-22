@@ -88,28 +88,5 @@ public class WallGrabComponent : MonoBehaviour
             }
         }
 
-        if (checkMoss)
-        {
-            if (Input.anyKeyDown)
-            {
-                bool isMovementKey =
-                    Input.GetKeyDown(KeyCode.UpArrow) ||
-                    Input.GetKeyDown(KeyCode.LeftArrow) ||
-                    Input.GetKeyDown(KeyCode.RightArrow) ||
-                    Input.GetKeyDown(KeyCode.W) ||
-                    Input.GetKeyDown(KeyCode.A) ||
-                    Input.GetKeyDown(KeyCode.D);
-
-                if (Input.GetKeyDown(KeyCode.RightShift))
-                {
-                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
-                }
-                else if (!isMovementKey)
-                {
-                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
-                }
-            }
-            
-        }
     }
 }

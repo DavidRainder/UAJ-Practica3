@@ -51,7 +51,6 @@ public class ButtonEnviroment : MonoBehaviour
     {
         if (!IsActive)
         {
-            Debug.Log("Opening door with ID: " + ID);
             PlayAnim("Activate");
             linkedDoor.Open();
         }
@@ -61,7 +60,6 @@ public class ButtonEnviroment : MonoBehaviour
     {
         if(!IsActive)
         {
-            Debug.Log("Closing door with ID: " + ID);
             PlayAnim("Deactivate");
             linkedDoor.Close();
         }

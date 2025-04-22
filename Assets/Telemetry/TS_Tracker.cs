@@ -96,7 +96,6 @@ namespace TelemetrySystem {
 
             numSession = 0;
             baseFileName = _fileDestinationName + DateTime.Now.ToString("-d-M-yyyy") + fileExtension;
-            Debug.Log("Files under the destiny directory: ");
 
             foreach (FileInfo info in directoryInfo.GetFiles())
             {
@@ -283,7 +282,6 @@ namespace TelemetrySystem {
 
                 mutEvents.ReleaseMutex();
 
-                Debug.Log("Events dumped");
             }
 
             CloseDumpingFile();
@@ -399,7 +397,6 @@ namespace TelemetrySystem {
             // UNLOCK MUTEX
             mutEvents.ReleaseMutex();
 
-            Debug.Log("Event Pushed");
         }
 
         public void TrackPersistentEvent(PersistentEvent e)

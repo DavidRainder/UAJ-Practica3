@@ -65,7 +65,6 @@ public class PlatformComponent : MonoBehaviour
         {
             foreach(var movableObject in objectsToMove)
             {
-                Debug.Log("Muevo COSAS");
                 movableObject.transform.position += movement3D;
             }
         }
