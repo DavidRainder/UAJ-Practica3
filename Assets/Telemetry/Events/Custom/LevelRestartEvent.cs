@@ -13,6 +13,6 @@ public class LevelRestartEvent : TrackerLevelEvent
     public override string ToJSON()
     {
         return base.ToJSON()
-            + $", \"position\": {{\"x\":\"{position.x}\",\"y\":\"{position.y}\"}}";
+            + $", \"restart_position\": {{\"x\":\"{position.x}\",\"y\":\"{position.y}\"}}";
     }
 }
