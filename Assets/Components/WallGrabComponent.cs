@@ -14,9 +14,6 @@ public class WallGrabComponent : MonoBehaviour
     bool touchingGrass;
     bool hasLeft = false;
 
-    //Telemetry
-    bool checkMoss = false;
-
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.GetComponent<MossComponent>() != null)
@@ -31,14 +28,6 @@ public class WallGrabComponent : MonoBehaviour
         if (collision.gameObject.GetComponent<MossComponent>() != null)
         {
             touchingGrass = false;
-        }
-    }
-
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        if (collision.gameObject.GetComponent<MossComponent>() != null)
-        {
-            checkMoss = true;
         }
     }
 

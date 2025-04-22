@@ -91,41 +91,43 @@ public class ButtonEnviroment : MonoBehaviour
     }
 
     //Telemetry
-    //private void OnTriggerStay2D(Collider2D collision)
-    //{
-    //    MovementComponent player = collision.GetComponent<MovementComponent>();
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        MovementComponent player = collision.GetComponent<MovementComponent>();
 
-    //    if (player != null)
-    //    {
-    //        check = true;
-    //    }
-    //}
+        if (player != null)
+        {
+            check = true;
+        }
+    }
 
-    ////Telemetry
-    //private void Update()
-    //{
-    //    if (check)
-    //    {
-    //        if (Input.anyKeyDown)
-    //        {
-    //            bool isMovementKey =
-    //                Input.GetKeyDown(KeyCode.UpArrow) ||
-    //                Input.GetKeyDown(KeyCode.LeftArrow) ||
-    //                Input.GetKeyDown(KeyCode.RightArrow) ||
-    //                Input.GetKeyDown(KeyCode.W) ||
-    //                Input.GetKeyDown(KeyCode.A) ||
-    //                Input.GetKeyDown(KeyCode.D);
+    //Telemetry
+    private void Update()
+    {
+        if (check)
+        {
+            if (Input.anyKeyDown)
+            {
+                bool isMovementKey =
+                    Input.GetKeyDown(KeyCode.UpArrow) ||
+                    Input.GetKeyDown(KeyCode.LeftArrow) ||
+                    Input.GetKeyDown(KeyCode.RightArrow) ||
+                    Input.GetKeyDown(KeyCode.W) ||
+                    Input.GetKeyDown(KeyCode.A) ||
+                    Input.GetKeyDown(KeyCode.D);
 
-    //            if (Input.GetKeyDown(KeyCode.Q))
-    //            {
-    //                Tracker.Instance.PushEvent(new InteractionEvent("Button", true));
-    //            }
-    //            else if (!isMovementKey)
-    //            {
-    //                Tracker.Instance.PushEvent(new InteractionEvent("Button", false));
-    //            }
-    //        }
-    //    }
-    //}
+                if (Input.GetKeyDown(KeyCode.Q))
+                {
+                    var a = gameObject.GetComponent<TailDropComponent>();
+                    if(a != null) Tracker.Instance.PushEvent(new InteractionEvent("Button", true));
+                    else Tracker.Instance.PushEvent(new InteractionEvent("Button", false));
+                }
+                else if (!isMovementKey)
+                {
+                    Tracker.Instance.PushEvent(new InteractionEvent("Button", false));
+                }
+            }
+        }
+    }
 
 }

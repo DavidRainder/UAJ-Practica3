@@ -6,24 +6,47 @@ using UnityEngine;
 public class InteractionComponent : MonoBehaviour
 {
     // Start is called before the first frame update
+    enum type {Moss, Button};
 
-    private bool check = false;
+    private bool check;
     private string playerName;
+    [SerializeField]
+    private type tipo;
+
+    private List<KeyCode> allowedKeys;
+    private bool checkMoss;
+    private bool checkButton;
+
     void Start()
     {
-        
+        allowedKeys = new List<KeyCode>
+        {
+            KeyCode.W, KeyCode.A, KeyCode.D,
+            KeyCode.UpArrow, KeyCode.LeftArrow, KeyCode.RightArrow
+        };
     }
 
     private void OnTriggerStay2D(Collider2D collision)
     {
         MovementComponent player = collision.GetComponent<MovementComponent>();
 
-        if(player!=null)
+        if(player!=null )
         {
             check = true;
             playerName = player.name;
         }
     }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        MovementComponent player = collision.GetComponent<MovementComponent>();
+
+        if (player != null)
+        {
+            check = false;
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -31,44 +54,43 @@ public class InteractionComponent : MonoBehaviour
         {
             if (Input.anyKey)
             {
-               
-                bool isMovementKey =
-                    Input.GetKeyDown(KeyCode.UpArrow) ||
-                    Input.GetKeyDown(KeyCode.LeftArrow) ||
-                    Input.GetKeyDown(KeyCode.RightArrow) ||
-                    Input.GetKeyDown(KeyCode.W) ||
-                    Input.GetKeyDown(KeyCode.A) ||
-                    Input.GetKeyDown(KeyCode.D);
-
-                if(gameObject.GetComponent<MossComponent>())
+                if (tipo == type.Moss)
                 {
-                    if (Input.GetKey(KeyCode.RightShift))
+                    foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
                     {
-                        if(playerName != "Bo")
+                        if (Input.GetKey(key) && (!allowedKeys.Contains(key) && key != KeyCode.RightShift))
                         {
-                           Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
+                            Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
+                            return; // salir, ya sabemos que fue fallo
                         }
-                        Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
                     }
-                    else if (!isMovementKey)
+                    if (Input.GetKey(KeyCode.RightShift)) // Si no hubo teclas prohibidas, ¿se pulsó Q?
                     {
-                        Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
+                        if (playerName != "Bo")
+                        {
+                            Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
+                        }
+                        else Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), true));
                     }
                 }
 
-                if (gameObject.GetComponent<ButtonEnviroment>())
+                if (tipo == type.Button)
                 {
-                    if (Input.GetKeyDown(KeyCode.RightShift))
+                    foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
+                    {
+                        if (Input.GetKeyDown(key) && (!allowedKeys.Contains(key) && key != KeyCode.Q))
+                        {
+                            Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
+                            return; // salir, ya sabemos que fue fallo
+                        }
+                    }
+                    if (Input.GetKeyDown(KeyCode.Q)) // Si no hubo teclas prohibidas, ¿se pulsó Q?
                     {
                         if (playerName != "Marvin")
                         {
-                            Tracker.Instance.PushEvent(new InteractionEvent("Button", false));
+                            Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), false));
                         }
-                        Tracker.Instance.PushEvent(new InteractionEvent("Button", true));
-                    }
-                    else if (!isMovementKey)
-                    {
-                        Tracker.Instance.PushEvent(new InteractionEvent("Button", false));
+                        else Tracker.Instance.PushEvent(new InteractionEvent(tipo.ToString(), true));
                     }
                 }
             }

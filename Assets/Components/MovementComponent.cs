@@ -64,53 +64,6 @@ public class MovementComponent : MonoBehaviour
         grabComp = otherMovement.gameObject.GetComponent<WallGrabComponent>();
     }
 
-    //private void OnCollisionEnter2D(Collision2D collision)
-    //{
-    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
-    //    {
-    //        checkMoss = true;
-    //    }
-    //}
-
-    //private void OnCollisionExit2D(Collision2D collision)
-    //{
-    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
-    //    {
-    //        checkMoss = false;
-    //    }
-    //}
-
-    //private void OnCollisionStay2D(Collision2D collision)
-    //{
-    //    checkMoss = false;
-    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
-    //    {
-    //        checkMoss = true;
-    //    }
-    //}
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        EnvironmentComponent collider = collision.GetComponent<EnvironmentComponent>();
-        if(collider != null)
-        {
-            //Debug.Log("ESTOY GROUNDED");
-            animation.Land();
-            isGrounded = true;
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D collision)
-    {
-        EnvironmentComponent collider = collision.GetComponent<EnvironmentComponent>();
-        if(collider != null)
-        {
-            //Debug.Log("YA NO ESTOY GROUNDED");
-            isGrounded = false;
-        }
-    }
-
-    
-
     public bool IsGrounded() { return isGrounded; }
     public bool CanAirMove() { return airMovement; }
 
@@ -120,6 +73,26 @@ public class MovementComponent : MonoBehaviour
 
         animation.SetDirection(direction);
       
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        EnvironmentComponent collider = collision.GetComponent<EnvironmentComponent>();
+        if (collider != null)
+        {
+            //Debug.Log("ESTOY GROUNDED");
+            animation.Land();
+            isGrounded = true;
+        }
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        EnvironmentComponent collider = collision.GetComponent<EnvironmentComponent>();
+        if (collider != null)
+        {
+            //Debug.Log("YA NO ESTOY GROUNDED");
+            isGrounded = false;
+        }
     }
 
     public void Jump(bool input) {
@@ -243,29 +216,55 @@ public class MovementComponent : MonoBehaviour
         }
         UpdateStepSound();
         UpdateGroundSound();
-        Debug.Log("checkMoss " + checkMoss);
-        //if (checkMoss)
-        //{
-        //    if (Input.anyKeyDown)
-        //    {
-        //        bool isMovementKey =
-        //            Input.GetKeyDown(KeyCode.UpArrow) ||
-        //            Input.GetKeyDown(KeyCode.LeftArrow) ||
-        //            Input.GetKeyDown(KeyCode.RightArrow) ||
-        //            Input.GetKeyDown(KeyCode.W) ||
-        //            Input.GetKeyDown(KeyCode.A) ||
-        //            Input.GetKeyDown(KeyCode.D);
 
-        //        if (Input.GetKeyDown(KeyCode.RightShift))
-        //        {
-        //            Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
-        //        }
-        //        else if (!isMovementKey)
-        //        {
-        //            Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
-        //        }
-        //    }
-        //}
+        //Telemetry
+        Debug.Log("checkMoss " + checkMoss);
+        if (checkMoss)
+        {
+            if (Input.anyKeyDown)
+            {
+                bool isMovementKey =
+                    Input.GetKeyDown(KeyCode.UpArrow) ||
+                    Input.GetKeyDown(KeyCode.LeftArrow) ||
+                    Input.GetKeyDown(KeyCode.RightArrow) ||
+                    Input.GetKeyDown(KeyCode.W) ||
+                    Input.GetKeyDown(KeyCode.A) ||
+                    Input.GetKeyDown(KeyCode.D);
+
+                if (Input.GetKeyDown(KeyCode.RightShift))
+                {
+                    var a = gameObject.GetComponent<WallGrabComponent>();
+                    if(a != null) Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
+                    else Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
+                }
+                else if (!isMovementKey)
+                {
+                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
+                }
+            }
+        }
+    }
+    //private void OnCollisionEnter2D(Collision2D collision)
+    //{
+    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
+    //    {
+    //        checkMoss = true;
+    //    }
+    //}
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.GetComponent<MossComponent>() != null)
+        {
+            //checkMoss = false;
+        }
+    }
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        //checkMoss = false;
+        if (collision.gameObject.GetComponent<MossComponent>() != null)
+        {
+            checkMoss = true;
+        }
     }
 }
 
