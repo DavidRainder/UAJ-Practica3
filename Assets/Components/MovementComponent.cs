@@ -64,30 +64,30 @@ public class MovementComponent : MonoBehaviour
         grabComp = otherMovement.gameObject.GetComponent<WallGrabComponent>();
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.GetComponent<MossComponent>() != null)
-        {
-            checkMoss = true;
-        }
-    }
+    //private void OnCollisionEnter2D(Collision2D collision)
+    //{
+    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
+    //    {
+    //        checkMoss = true;
+    //    }
+    //}
 
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.GetComponent<MossComponent>() != null)
-        {
-            checkMoss = false;
-        }
-    }
+    //private void OnCollisionExit2D(Collision2D collision)
+    //{
+    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
+    //    {
+    //        checkMoss = false;
+    //    }
+    //}
 
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        checkMoss = false;
-        if (collision.gameObject.GetComponent<MossComponent>() != null)
-        {
-            checkMoss = true;
-        }
-    }
+    //private void OnCollisionStay2D(Collision2D collision)
+    //{
+    //    checkMoss = false;
+    //    if (collision.gameObject.GetComponent<MossComponent>() != null)
+    //    {
+    //        checkMoss = true;
+    //    }
+    //}
     private void OnTriggerEnter2D(Collider2D collision)
     {
         EnvironmentComponent collider = collision.GetComponent<EnvironmentComponent>();
@@ -244,28 +244,28 @@ public class MovementComponent : MonoBehaviour
         UpdateStepSound();
         UpdateGroundSound();
         Debug.Log("checkMoss " + checkMoss);
-        if (checkMoss)
-        {
-            if (Input.anyKeyDown)
-            {
-                bool isMovementKey =
-                    Input.GetKeyDown(KeyCode.UpArrow) ||
-                    Input.GetKeyDown(KeyCode.LeftArrow) ||
-                    Input.GetKeyDown(KeyCode.RightArrow) ||
-                    Input.GetKeyDown(KeyCode.W) ||
-                    Input.GetKeyDown(KeyCode.A) ||
-                    Input.GetKeyDown(KeyCode.D);
+        //if (checkMoss)
+        //{
+        //    if (Input.anyKeyDown)
+        //    {
+        //        bool isMovementKey =
+        //            Input.GetKeyDown(KeyCode.UpArrow) ||
+        //            Input.GetKeyDown(KeyCode.LeftArrow) ||
+        //            Input.GetKeyDown(KeyCode.RightArrow) ||
+        //            Input.GetKeyDown(KeyCode.W) ||
+        //            Input.GetKeyDown(KeyCode.A) ||
+        //            Input.GetKeyDown(KeyCode.D);
 
-                if (Input.GetKeyDown(KeyCode.RightShift))
-                {
-                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
-                }
-                else if (!isMovementKey)
-                {
-                    Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
-                }
-            }
-        }
+        //        if (Input.GetKeyDown(KeyCode.RightShift))
+        //        {
+        //            Tracker.Instance.PushEvent(new InteractionEvent("Moss", true));
+        //        }
+        //        else if (!isMovementKey)
+        //        {
+        //            Tracker.Instance.PushEvent(new InteractionEvent("Moss", false));
+        //        }
+        //    }
+        //}
     }
 }
 
