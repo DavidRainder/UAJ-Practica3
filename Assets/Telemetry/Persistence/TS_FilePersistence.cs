@@ -88,7 +88,7 @@ namespace TelemetrySystem
                 string[] split = info.Name.Split('_');
                 if (split[1] == baseFileName)
                 {
-                    numSession = int.Parse(split[0]) + 1;
+                    numSession = Math.Max(numSession, int.Parse(split[0]) + 1);
                 }
             }
 
