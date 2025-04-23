@@ -5,12 +5,16 @@ using TelemetrySystem;
 
 public class ToCreditsManin : MonoBehaviour
 {
+    private bool active = true;
     public void LoadFinalScene()
     {
         //Telemetry
-        Tracker.Instance.PushEvent(new LevelEndEvent(GameManager.Instance.PLAY_NAME));
+        if(active) Tracker.Instance.PushEvent(new LevelEndEvent(GameManager.Instance.PLAY_NAME));
+        active = false;
 
         GameManager.Instance.LoadScene("EndCinematic");
+
+        this.enabled = false;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
