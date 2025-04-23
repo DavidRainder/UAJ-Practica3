@@ -9,7 +9,11 @@ public class ToCreditsManin : MonoBehaviour
     public void LoadFinalScene()
     {
         //Telemetry
-        if(active) Tracker.Instance.PushEvent(new LevelEndEvent(GameManager.Instance.PLAY_NAME));
+        if (active)
+        {
+            Tracker.Instance.StopTrackingPersistentEvent("PlayerPosition");
+            Tracker.Instance.PushEvent(new LevelEndEvent(GameManager.Instance.PLAY_NAME));
+        }
         active = false;
 
         GameManager.Instance.LoadScene("EndCinematic");
